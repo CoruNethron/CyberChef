@@ -20,11 +20,28 @@ class JSEvaluate extends Operation {
 
         this.name = "JavaScript Eval";
         this.module = "Code";
-        this.description = "Executes (evaluates) JavaScript code and returns the result as a string. The input should be valid JavaScript code that returns a value when executed.";
+        this.description = [
+            "Executes (evaluates) JavaScript code and returns the result as a string.",
+            "<br><br>",
+            "If the Script argument is empty, the input data is treated as JavaScript code and evaluated directly.",
+            "<br><br>",
+            "If the Script argument contains code, the input data is inserted into the script using the specified placeholder template and then evaluated.",
+        ].join("\n");
         this.infoURL = "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval";
         this.inputType = "string";
         this.outputType = "string";
-        this.args = [];
+        this.args = [
+            {
+                "name": "Input placeholder",
+                "type": "string",
+                "value": "[%input%]"
+            },
+            {
+                "name": "Script",
+                "type": "text",
+                "value": ""
+            }
+        ];
     }
 
     /**
@@ -33,13 +50,25 @@ class JSEvaluate extends Operation {
      * @returns {string}
      */
     run(input, args) {
+        const [placeholder, script] = args;
+
         try {
+            // Determine what code to evaluate
+            let codeToEvaluate;
+            if (script && script.trim().length > 0) {
+                // Use the script from argument, replacing placeholder with input
+                codeToEvaluate = script.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), input);
+            } else {
+                // Use the input directly as the code
+                codeToEvaluate = input;
+            }
+
             // Create a function to evaluate the code
             // Using Function constructor instead of eval for better scope isolation
-            const evaluateCode = new Function("input", `
+            const evaluateCode = new Function("code", `
                 "use strict";
                 try {
-                    const result = eval(input);
+                    const result = eval(code);
                     // Convert result to string
                     if (result === null) return "null";
                     if (result === undefined) return "undefined";
@@ -50,7 +79,7 @@ class JSEvaluate extends Operation {
                 }
             `);
 
-            return evaluateCode(input);
+            return evaluateCode(codeToEvaluate);
 
         } catch (err) {
             throw new OperationError("Error evaluating JavaScript: " + err.message);
