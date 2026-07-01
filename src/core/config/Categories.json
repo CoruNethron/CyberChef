@@ -483,6 +483,7 @@
             "JavaScript Parser",
             "JavaScript Beautify",
             "JavaScript Minify",
+            "JavaScript Eval",
             "JSON Beautify",
             "JSON Minify",
             "XML Beautify",
